@@ -1,22 +1,40 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/security/Pausable.sol';
+import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 
 /**
- * @notice A mintable ERC20
+ * @notice A Staking contract for PREZRV
  */
-contract TestToken is ERC20, AccessControl {
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+contract Staking is Ownable, Pausable {
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
-    constructor() ERC20("Test Token", "TST") {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(MINTER_ROLE, msg.sender);
+    // ==========State variables====================================
+    IERC20 public stakingToken;
+
+    // Stake type for balances variable
+    struct Stake {
+        uint256 amount;
+        uint256 stakeTimestamp;
+    }
+    mapping (address => Stake) balances;
+
+    // ==========Events=============================================
+    event Staked(address indexed staker, uint256 indexed amount, uint256 indexed stakeTimestamp);
+
+    // ==========Constructor========================================
+    constructor(
+        IERC20 _token
+    ) {
+        require(address(_token) != address(0), "Invalid address");
+        
+        stakingToken = _token;
     }
 
-    function mint(address to, uint256 amount) external {
-        require(hasRole(MINTER_ROLE, msg.sender), "Only minter can mint");
-        _mint(to, amount);
-    }
+    // ==========Functions==========================================
+
 }
