@@ -21,10 +21,11 @@ contract Staking is Ownable, Pausable {
         uint256 amount;
         uint256 stakeTimestamp;
     }
-    mapping (address => Stake) balances;
+    mapping (address => Stake[]) balances;
 
     // ==========Events=============================================
-    event Staked(address indexed staker, uint256 indexed amount, uint256 indexed stakeTimestamp);
+    event TokenStaked(address indexed staker, uint256 indexed amount, uint256 indexed stakeTimestamp);
+    event StakingTransferFromFailed(address indexed staker, uint256 indexed amount);
 
     // ==========Constructor========================================
     constructor(
@@ -36,5 +37,26 @@ contract Staking is Ownable, Pausable {
     }
 
     // ==========Functions==========================================
+    /// @notice User Stake tokens
+    /// @dev User approve tokens & then use this function
+    /// @param _amount token amount for staking
+    function stake(uint256 _amount) external payable whenNotPaused {
+        require(msg.sender != address(0), "Invalid address");
+        require( _amount > 0, "amount must be positive");
+
+        Stake memory newStaking = Stake(_amount, block.timestamp);
+        balances[msg.sender].push(newStaking);
+
+        // transfer to SC using delegate transfer
+        // NOTE: the tokens has to be approved first by the caller to the SC using `approve()` method.
+        bool success = stakingToken.transferFrom(msg.sender, address(this), _amount);
+        if(success) {
+            emit TokenStaked(msg.sender, _amount, block.timestamp);
+        } else {
+            emit StakingTransferFromFailed(msg.sender, _amount);
+            revert("stakingToken.transferFrom function failed");
+        }
+    }
+
 
 }
