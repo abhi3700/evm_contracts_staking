@@ -15,5 +15,15 @@
 
 
 ### Functions
+* `stake` has params:
+	- `token` of type `IERC20`
+	- `amount` of type `uint256`
 
 ### Events
+* `TokenStaked` has params:
+	- `staker`
+	- `amount`
+	- `stakeTimestamp`
+* `StakingTransferFromFailed` has params:
+	- `staker`
+	- `amount`

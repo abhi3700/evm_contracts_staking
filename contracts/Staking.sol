@@ -40,8 +40,9 @@ contract Staking is Ownable, Pausable {
     /// @notice User Stake tokens
     /// @dev User approve tokens & then use this function
     /// @param _amount token amount for staking
-    function stake(uint256 _amount) external payable whenNotPaused {
+    function stake(IERC20 _token, uint256 _amount) external payable whenNotPaused {
         require(msg.sender != address(0), "Invalid address");
+        require(_token != stakingToken, "Invalid token");)
         require( _amount > 0, "amount must be positive");
 
         Stake memory newStaking = Stake(_amount, block.timestamp);
