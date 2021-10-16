@@ -2,22 +2,26 @@
 
 ### Constructor
 * set the PREZRV `token` contract address.
-* set the deployer as `admin`.
+* set the deployer as admin, which can be viewed using `owner()` function (inherited from `Ownable`).
 
 ### State Variables
-* `balances`
-	- type: `mapping`
+* `balances` of type `mapping` has:
 	- key: `address`
-	- value: `Stake`
-		+ `Stake` is a struct of
-			- `timestamp` of type: `uint256`
+	- value: array of `Stake` where,
+		+ `Stake` is a struct of attributes:
 			- `amount` of type: `uint256`
-
+			- `stakeTimestamp` of type: `uint256`
 
 ### Functions
 * `stake` has params:
 	- `token` of type `IERC20`
 	- `amount` of type `uint256`
+* `getStakedAmtIdx` has params:
+	- `account` of type `address`
+	- `arrayIndex` of type `uint256`
+* `getStakedAmtTot` has params:
+	- `account` of type `address`
+
 
 ### Events
 * `TokenStaked` has params:

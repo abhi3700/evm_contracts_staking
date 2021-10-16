@@ -21,7 +21,7 @@ contract Staking is Ownable, Pausable {
         uint256 amount;
         uint256 stakeTimestamp;
     }
-    mapping (address => Stake[]) balances;
+    mapping (address => Stake[]) public balances;
 
     // ==========Events=============================================
     event TokenStaked(address indexed staker, uint256 indexed amount, uint256 indexed stakeTimestamp);
@@ -42,7 +42,6 @@ contract Staking is Ownable, Pausable {
     /// @param _token token contract address
     /// @param _amount token amount for staking
     function stake(IERC20 _token, uint256 _amount) external payable whenNotPaused {
-        require(msg.sender != address(0), "Invalid address");
         require(_token != stakingToken, "Invalid token");)
         require( _amount > 0, "amount must be positive");
 
@@ -58,6 +57,36 @@ contract Staking is Ownable, Pausable {
             emit StakingTransferFromFailed(msg.sender, _amount);
             revert("stakingToken.transferFrom function failed");
         }
+    }
+
+    // -------------------------------------------------------------
+    /// @notice Anyone can view staked amount of a user by index
+    /// @dev no permission required
+    /// @param account account for which staked amount by index is asked for
+    /// @param arrayIndex the index of the balances value array
+    function getStakedAmtIdx(address account, uint256 arrayIndex) public view returns (uint256) {
+        require(account != address(0), "Invalid address");
+        require(balances[account].length > 0, "No staking done by this account");
+        require( (arrayIndex > 0) && (arrayIndex <= balances[account].length.sub(1)), "index must be within balances index");
+
+        return balances[account][arrayIndex].amount;
+    }
+
+    // -------------------------------------------------------------
+    /// @notice Anyone can view total staked amount of a user
+    /// @dev no permission required
+    /// @param account account for which total staked amount is asked for
+    function getStakedAmtTot(address account) public view returns (uint256) {
+        require(account != address(0), "Invalid address");
+        require(balances[account].length > 0, "No staking done by this account");
+
+        uint256 sum = 0;
+
+        for(uint256 i = 0; i < balances[account].length; ++i) {
+            sum = sum.add(balances[account].amount);
+        }
+
+        return sum;
     }
 
 
