@@ -20,10 +20,18 @@
 * `stake` has params:
 	- `token` of type `IERC20`
 	- `amount` of type `uint256`
+* `setNFTUnlockTokenLimit` has params:
+	- `amount` of type `uint256`
+* `setNFTServTokenLimit` has params:
+	- `amount` of type `uint256`
+* `setDAOTokenLimit` has params:
+	- `amount` of type `uint256`
 * `getStakedAmtIdx` has params:
 	- `account` of type `address`
 	- `arrayIndex` of type `uint256`
 * `getStakedAmtTot` has params:
+	- `account` of type `address`
+* `getUserStatus` has params:
 	- `account` of type `address`
 
 #### Events
@@ -34,3 +42,12 @@
 * `StakingTransferFromFailed` has params:
 	- `staker`
 	- `amount`
+* `NFTUnlockTokenLimitSet` has params:
+	- `amount`
+	- `setTimestamp`
+* `NFTServTokenLimitSet` has params:
+	- `amount`
+	- `setTimestamp`
+* `DAOTokenLimitSet` has params:
+	- `amount`
+	- `setTimestamp`

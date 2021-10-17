@@ -16,6 +16,12 @@ contract Staking is Ownable, Pausable {
     // ==========State variables====================================
     IERC20 public stakingToken;
 
+    // token limits for staked amount for different features
+    uint256 public nftUnlockTokenLimit;
+    uint256 public nftServTokenLimit;
+    uint256 public daoTokenLimit;
+    uint256 constant public STAKE_DURATION = 2_629_746;
+
     // Stake type for balances variable
     struct Stake {
         uint256 amount;
@@ -26,7 +32,9 @@ contract Staking is Ownable, Pausable {
     // ==========Events=============================================
     event TokenStaked(address indexed staker, uint256 indexed amount, uint256 indexed stakeTimestamp);
     event StakingTransferFromFailed(address indexed staker, uint256 indexed amount);
-
+    event NFTUnlockTokenLimitSet(uint256 indexed amount, uint256 indexed setTimestamp);
+    event NFTServTokenLimitSet(uint256 indexed amount, uint256 indexed setTimestamp);
+    event DAOTokenLimitSet(uint256 indexed amount, uint256 indexed setTimestamp);
     // ==========Constructor========================================
     constructor(
         IERC20 _token
@@ -60,6 +68,39 @@ contract Staking is Ownable, Pausable {
     }
 
     // -------------------------------------------------------------
+    /// @notice Admin set token limit for unlocking NFTs to users
+    /// @dev accessible by Owner
+    /// @param amount the amount to be updated as the new token limit
+    function setNFTUnlockTokenLimit(uint256 amount) external onlyOwner whenNotPaused {
+        require(amount > 0, "amount must be positive");
+
+        nftUnlockTokenLimit = amount;
+        emit NFTUnlockTokenLimitSet(amount, block.timestamp);
+    }
+
+    // -------------------------------------------------------------
+    /// @notice Admin set token limit for unlocking NFT related services to users
+    /// @dev accessible by Owner
+    /// @param amount the amount to be updated as the new token limit
+    function setNFTServTokenLimit(uint256 amount) external onlyOwner whenNotPaused {
+        require(amount > 0, "amount must be positive");
+
+        nftServTokenLimit = amount;
+        emit NFTServTokenLimitSet(amount, block.timestamp);
+    }
+
+    // -------------------------------------------------------------
+    /// @notice Admin set token limit for accessing DAO to users
+    /// @dev accessible by Owner
+    /// @param amount the amount to be updated as the new token limit
+    function setDAOTokenLimit(uint256 amount) external onlyOwner whenNotPaused {
+        require(amount > 0, "amount must be positive");
+
+        daoTokenLimit = amount;
+        emit DAOTokenLimitSet(amount, block.timestamp);
+    }
+
+    // -------------------------------------------------------------
     /// @notice Anyone can view staked amount of a user by index
     /// @dev no permission required
     /// @param account account for which staked amount by index is asked for
@@ -83,11 +124,33 @@ contract Staking is Ownable, Pausable {
         uint256 sum = 0;
 
         for(uint256 i = 0; i < balances[account].length; ++i) {
-            sum = sum.add(balances[account].amount);
+            sum = sum.add(balances[account][i].amount);
         }
 
         return sum;
     }
 
+    // -------------------------------------------------------------
+    /// @notice View User's status of eliqibility for getting access to platform features
+    /// @dev viewable by anyone
+    /// @param account user's address
+    /// @return 0-> not staking for min. duration, 1-> NFT unlock, 2-> NFT services, 3-> DAO
+    function getUserStatus(address account) external view returns (uint256) {
+        require(account != address(0), "Invalid address");
+        require(balances[account].length > 0, "No staking done by this account");
+
+        uint256 stakedAmountTot = 0;
+
+        for(uint256 i = 0; i < balances[account].length; ++i) {
+            if ( (block.timestamp).sub(balances[account][i].stakeTimestamp) >= STAKE_DURATION ) {
+                stakedAmountTot = stakedAmountTot.add(balances[account][i].amount);
+            }
+        }
+
+        if (stakedAmount >= 500) return 1;
+        else if (stakedAmount >= 1000) return 2;
+        else if (stakedAmount >= 1500) return 3;
+        else return 0;
+    }
 
 }
