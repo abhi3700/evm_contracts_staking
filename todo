@@ -1,9 +1,4 @@
 - documentation
-- contract
-	- isNFTUnlock
-		- check if 1 month elapsed with total of min. 500 tokens as staked.
-			- just check for each index whether the time elapsed is 1 month & sum for all such indices.
-	- isNFTserv
-	- isDAO
++ contract
 - unit testing
 - deployment
