@@ -50,7 +50,7 @@ contract Staking is Ownable, Pausable {
     /// @param _token token contract address
     /// @param _amount token amount for staking
     function stake(IERC20 _token, uint256 _amount) external payable whenNotPaused {
-        require(_token != stakingToken, "Invalid token");)
+        require(_token != stakingToken, "Invalid token");
         require( _amount > 0, "amount must be positive");
 
         Stake memory newStaking = Stake(_amount, block.timestamp);
@@ -147,9 +147,9 @@ contract Staking is Ownable, Pausable {
             }
         }
 
-        if (stakedAmount >= 500) return 1;
-        else if (stakedAmount >= 1000) return 2;
-        else if (stakedAmount >= 1500) return 3;
+        if (stakedAmountTot >= 500) return 1;
+        else if (stakedAmountTot >= 1000) return 2;
+        else if (stakedAmountTot >= 1500) return 3;
         else return 0;
     }
 
