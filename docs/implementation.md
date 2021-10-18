@@ -5,6 +5,10 @@
 
 ### SC System Design
 #### State Variables
+* `stakingToken` of type `IERC20`
+* `nftUnlockTokenLimit` of type `uint256`
+* `nftServTokenLimit` of type `uint256`
+* `daoTokenLimit` of type `uint256`
 * `balances` of type `mapping` has:
 	- key: `address`
 	- value: array of `Stake` where,
@@ -13,8 +17,8 @@
 			- `stakeTimestamp` of type: `uint256`
 
 #### Constructor
-* set the PREZRV `token` contract address.
-* set the deployer as admin, which can be viewed using `owner()` function (inherited from `Ownable`).
+* Set the PREZRV `token` contract address.
+* Set the deployer as admin, which can be viewed using `owner()` function (inherited from `Ownable`).
 
 #### Functions
 * `stake` has params:

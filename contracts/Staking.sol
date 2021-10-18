@@ -20,7 +20,7 @@ contract Staking is Ownable, Pausable {
     uint256 public nftUnlockTokenLimit;
     uint256 public nftServTokenLimit;
     uint256 public daoTokenLimit;
-    uint256 constant public STAKE_DURATION = 2_629_746;
+    uint256 constant public STAKE_DURATION = 2_629_746;     // 1 month in seconds
 
     // Stake type for balances variable
     struct Stake {
