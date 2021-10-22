@@ -24,12 +24,20 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     uint256 public daoTokenLimit;
     uint256 constant public STAKE_DURATION = 2_629_746;     // 1 month in seconds
 
-    // Stake type for balances variable
+    // Stake struct type for balances variable
+    // stores total staked amount yet from the beginning till 
+    // the timestamp (referred to) for an address
     struct Stake {
         uint256 amount;
-        uint256 stakeTimestamp;
+        uint256 stakedAmtTotYet;
     }
-    mapping (address => Stake[]) public balances;
+
+    // user -> (timestamp -> stakeAmt) 
+    mapping (address => mapping(uint256 => Stake) ) public balances;
+
+    // stores total staked amount from the beginning for an address
+    // user -> totalStakedAmt
+    mapping (address => uint256) totalBalances;
 
     // ==========Events=============================================
     event TokenStaked(address indexed staker, uint256 indexed amount, uint256 indexed stakeTimestamp);
@@ -51,12 +59,20 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     /// @dev User approve tokens & then use this function
     /// @param _token token contract address
     /// @param _amount token amount for staking
-    function stake(IERC20 _token, uint256 _amount) external whenNotPaused nonReentrant {
+    function stake(IERC20 _token, address account, uint256 _amount) external whenNotPaused nonReentrant {
         require(_token != stakingToken, "Invalid token");
-        require( _amount > 0, "amount must be positive");
+        require(account != address(0), "account must be non-zero");
+        require(_amount > 0, "amount must be positive");
 
-        Stake memory newStaking = Stake(_amount, block.timestamp);
-        balances[msg.sender].push(newStaking);
+        // read the total staked amount
+        totStakedAmt = totalBalances[account];
+
+        // update the balances
+        balances[account][block.timestamp].amount = _amount;
+        balances[account][block.timestamp].stakedAmtTotYet = totStakedAmt.add(_amount);
+
+        // update the total staked amount
+        totalBalances[account] = totStakedAmt.add(_amount);
 
         // transfer to SC using delegate transfer
         // NOTE: the tokens has to be approved first by the caller to the SC using `approve()` method.
@@ -103,33 +119,45 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     }
 
     // -------------------------------------------------------------
-    /// @notice Anyone can view staked amount of a user by index
+    /// @notice Anyone can view staked amount of a user at a timestamp
     /// @dev no permission required
     /// @param account account for which staked amount by index is asked for
-    /// @param arrayIndex the index of the balances value array
-    function getStakedAmtIdx(address account, uint256 arrayIndex) public view returns (uint256) {
+    /// @param timestamp timestamp at which amount is staked
+    /// @param total staked amount at given timestamp
+    function getStakedAmtAtTstamp(address account, uint256 timestamp) public view returns (uint256) {
         require(account != address(0), "Invalid address");
-        require(balances[account].length > 0, "No staking done by this account");
-        require( (arrayIndex > 0) && (arrayIndex <= balances[account].length.sub(1)), "index must be within balances index");
+        require(totalBalances[account] != 0, "No staking done for this account");
+        require(balances[account][timestamp].amount != 0, "No staking done for this account at parsed timestamp");
+        require(timestamp > 0 && timestamp > block.timestamp, "Invalid timestamp");
 
-        return balances[account][arrayIndex].amount;
+        return balances[account][timestamp].amount;
     }
 
     // -------------------------------------------------------------
-    /// @notice Anyone can view total staked amount of a user
+    /// @notice Anyone can view total staked amount of a user till this timestamp
+    /// @dev no permission required
+    /// @param account account for which total staked amount by timestamp is asked for
+    /// @param timestamp timestamp by which total staked amount is returned
+    /// @return total staked amount till timestamp
+    function getStakedTotAmtTillTstamp(address account, uint256 timestamp) public view returns (uint256) {
+        require(account != address(0), "Invalid address");
+        require(totalBalances[account] != 0, "No staking done for this account");
+        require(balances[account][timestamp].stakedAmtTotYet != 0, "No staking done for this account till this timestamp");
+        require(timestamp > 0 && timestamp > block.timestamp, "Invalid timestamp");
+
+        return balances[account][timestamp].stakedAmtTotYet;
+    }
+
+    // -------------------------------------------------------------
+    /// @notice Anyone can view total staked amount of a user till date
     /// @dev no permission required
     /// @param account account for which total staked amount is asked for
+    /// @return total staked amount
     function getStakedAmtTot(address account) public view returns (uint256) {
         require(account != address(0), "Invalid address");
-        require(balances[account].length > 0, "No staking done by this account");
+        require(totalBalances[account] != 0, "No staking done for this account");
 
-        uint256 sum = 0;
-
-        for(uint256 i = 0; i < balances[account].length; ++i) {
-            sum = sum.add(balances[account][i].amount);
-        }
-
-        return sum;
+        return totalBalances[account];
     }
 
     // -------------------------------------------------------------
@@ -139,15 +167,9 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     /// @return 0-> not staking for min. duration, 1-> NFT unlock, 2-> NFT services, 3-> DAO
     function getUserStatus(address account) external view returns (uint256) {
         require(account != address(0), "Invalid address");
-        require(balances[account].length > 0, "No staking done by this account");
+        require(totalBalances[account] != 0, "No staking done for this account");
 
-        uint256 stakedAmountTot = 0;
-
-        for(uint256 i = 0; i < balances[account].length; ++i) {
-            if ( (block.timestamp).sub(balances[account][i].stakeTimestamp) >= STAKE_DURATION ) {
-                stakedAmountTot = stakedAmountTot.add(balances[account][i].amount);
-            }
-        }
+        uint256 stakedAmountTot = totalBalances[account];
 
         if (stakedAmountTot >= 500) return 1;
         else if (stakedAmountTot >= 1000) return 2;
