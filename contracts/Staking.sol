@@ -5,11 +5,13 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import 'hardhat/console.sol';
 
 /**
  * @notice A Staking contract for PREZRV
  */
-contract Staking is Ownable, Pausable {
+contract Staking is Ownable, Pausable, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -49,7 +51,7 @@ contract Staking is Ownable, Pausable {
     /// @dev User approve tokens & then use this function
     /// @param _token token contract address
     /// @param _amount token amount for staking
-    function stake(IERC20 _token, uint256 _amount) external payable whenNotPaused {
+    function stake(IERC20 _token, uint256 _amount) external whenNotPaused nonReentrant {
         require(_token != stakingToken, "Invalid token");
         require( _amount > 0, "amount must be positive");
 
