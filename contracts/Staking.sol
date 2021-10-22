@@ -65,7 +65,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         require(_amount > 0, "amount must be positive");
 
         // read the total staked amount
-        totStakedAmt = totalBalances[account];
+        uint256 totStakedAmt = totalBalances[account];
 
         // update the balances
         balances[account][block.timestamp].amount = _amount;
@@ -123,7 +123,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     /// @dev no permission required
     /// @param account account for which staked amount by index is asked for
     /// @param timestamp timestamp at which amount is staked
-    /// @param total staked amount at given timestamp
+    /// @return total staked amount at given timestamp
     function getStakedAmtAtTstamp(address account, uint256 timestamp) public view returns (uint256) {
         require(account != address(0), "Invalid address");
         require(totalBalances[account] != 0, "No staking done for this account");
