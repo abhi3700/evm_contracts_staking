@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/utils/Context.sol';
 import 'hardhat/console.sol';
 
 /**
@@ -41,7 +42,6 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
 
     // ==========Events=============================================
     event TokenStaked(address indexed staker, uint256 indexed amount, uint256 indexed stakeTimestamp);
-    event StakingTransferFromFailed(address indexed staker, uint256 indexed amount);
     event NFTUnlockTokenLimitSet(uint256 indexed amount, uint256 indexed setTimestamp);
     event NFTServTokenLimitSet(uint256 indexed amount, uint256 indexed setTimestamp);
     event DAOTokenLimitSet(uint256 indexed amount, uint256 indexed setTimestamp);
@@ -76,13 +76,9 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
 
         // transfer to SC using delegate transfer
         // NOTE: the tokens has to be approved first by the caller to the SC using `approve()` method.
-        bool success = stakingToken.transferFrom(msg.sender, address(this), _amount);
-        if(success) {
-            emit TokenStaked(msg.sender, _amount, block.timestamp);
-        } else {
-            emit StakingTransferFromFailed(msg.sender, _amount);
-            revert("stakingToken.transferFrom function failed");
-        }
+        bool success = stakingToken.transferFrom(_msgSender(), address(this), _amount);
+        require(success, "stakingToken.transferFrom function failed");
+        emit TokenStaked(_msgSender(), _amount, block.timestamp);
     }
 
     // -------------------------------------------------------------
