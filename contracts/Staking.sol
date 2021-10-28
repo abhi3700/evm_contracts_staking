@@ -173,4 +173,15 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         else return 0;
     }
 
+    // ------------------------------------------------------------------------------------------
+    /// @notice Pause contract 
+    function pause() public onlyOwner whenNotPaused {
+        _pause();
+    }
+
+    /// @notice Unpause contract
+    function unpause() public onlyOwner whenPaused {
+        _unpause();
+    }
+
 }
