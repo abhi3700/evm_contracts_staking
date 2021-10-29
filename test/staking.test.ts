@@ -70,16 +70,17 @@ describe("Staking contract", () => {
 
 		// console.log(`Staking owner: ${await stakingContract.owner()}`);
 
-		// mint 10,000 tokens to each addr1, addr2
+		// mint 10,000 tokens to each addr1, addr2, addr3
 		// await token.connect(owner.address).mint(addr1.address, String(1e22));
 		// await token.connect(owner.address).mint(addr2.address, String(1e22));
 		await token.mint(addr1.address, BigNumber.from("10000000000000000000000"));
 		await token.mint(addr2.address, BigNumber.from("10000000000000000000000"));
+		await token.mint(addr3.address, BigNumber.from("10000000000000000000000"));
 
-
-		// verify balance of addr1, addr2 as 10k PREZRV tokens
+		// verify balance of addr1, addr2, addr3 as 10k PREZRV tokens
 		expect(await token.balanceOf(addr1.address)).to.eq(BigNumber.from("10000000000000000000000"));
 		expect(await token.balanceOf(addr2.address)).to.eq(BigNumber.from("10000000000000000000000"));
+		expect(await token.balanceOf(addr3.address)).to.eq(BigNumber.from("10000000000000000000000"));
 	});
 
 	describe("Stake function", async () => {
@@ -89,7 +90,9 @@ describe("Staking contract", () => {
 
 			// first approve the 1e20 i.e. 100 PREZRV tokens to the contract
 			token.connect(addr3).approve(stakingContract.address, BigNumber.from("100000000000000000000"));
-			console.log(await token.allowance(addr3.address, stakingContract.address));
+			// console.log(await token.allowance(addr3.address, stakingContract.address));
+			// await expect(token.allowance(addr3.address, stakingContract.address)).to.eq(BigNumber.from("100000000000000000000"));
+			// await expect(token.allowance(addr3.address, stakingContract.address)).to.eq(String("100000000000000000000"));
 
 			// parse addr1 as token contract address into stake() function
 			// parse addr2 as the account where staked,
@@ -126,7 +129,7 @@ describe("Staking contract", () => {
 			// parse 1e20 i.e. 100 PREZRV tokens as the 
 			await expect(
 			stakingContract.connect(addr3).stake(token.address, addr2.address, BigNumber.from("100000000000000000000")))
-				.to.be.revertedWith("Invalid token");
+				.to.be.revertedWith("Pausable: paused");
 
 		});
 
