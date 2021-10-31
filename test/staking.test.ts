@@ -5,6 +5,18 @@ import { deployContract, solidity } from "ethereum-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import GenericERC20Artifact from "../build/artifacts/contracts/helper/GenericERC20.sol/GenericERC20.json"
 import { GenericERC20 } from "../build/typechain/GenericERC20"
+import {
+  MAX_UINT256,
+  TIME,
+  ZERO_ADDRESS,
+  // asyncForEach,
+  // deployContractWithLibraries,
+  getCurrentBlockTimestamp,
+  // getUserTokenBalance,
+  // getUserTokenBalances,
+  setNextTimestamp,
+  setTimestamp,
+} from "./testUtils"
 
 chai.use(solidity);
 const { expect } = chai;
@@ -20,9 +32,6 @@ describe("Staking contract", () => {
 		addr4 : SignerWithAddress;
 	let token: Contract,
 	  	stakingContract: Contract;
-
-	const MAX_UINT256 = ethers.constants.MaxUint256
-	const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 	beforeEach(async () => {
 		// get signers
@@ -87,7 +96,34 @@ describe("Staking contract", () => {
 
 	});
 
-	describe("Stake function", async () => {
+	describe("Stake", async () => {
+		it("Succeeds with staking", async () => {
+			// console.log(`Token owner: ${await token.owner()}`);
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
+
+      		// const currentTimestamp = await getCurrentBlockTimestamp();
+
+			// addr3 stake 1e19 i.e. 10 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+				// .withArgs(addr3.address, BigNumber.from("10000000000000000000"), await getCurrentBlockTimestamp());
+
+		});
+
+		it("Reverts when address is zero", async () => {
+			// console.log(`Token owner: ${await token.owner()}`);
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
+
+			// parse addr1 as token contract address into stake() function
+			// parse addr2 as the account where staked,
+			// parse 0 PREZRV tokens
+			await expect(
+			stakingContract.connect(addr3).stake(ZERO_ADDRESS, BigNumber.from("10000000000000000000")))
+				.to.be.revertedWith("Account must be non-zero");
+		});
+
 		it("Reverts when amount is zero", async () => {
 			// console.log(`Token owner: ${await token.owner()}`);
 			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
@@ -132,63 +168,48 @@ describe("Staking contract", () => {
 
 		});
 
+ 	});
+
+	describe("Set token limit for NFT unlocking", async () => {
+		it("Reverts when limit set by non-owner", async () => {
+			// addr3 set 0 PREZRV as token limit for NFT unlocking
+			await expect(
+			stakingContract.connect(addr3).setNFTUnlockTokenLimit(BigNumber.from("500000000000000000000")))
+				.to.be.revertedWith("Ownable: caller is not the owner");
+		});
+
+		it("Reverts when amount is zero", async () => {
+			// owner set 0 PREZRV as token limit for NFT unlocking
+			await expect(
+			stakingContract.connect(owner).setNFTUnlockTokenLimit(BigNumber.from(0)))
+				.to.be.revertedWith("Amount must be positive");
+		});
+
+		it("Owner is able to transfer ownership", async () => {
+			await expect(stakingContract.transferOwnership(owner2.address))
+				.to.emit(stakingContract, 'OwnershipTransferred')
+				.withArgs(owner.address, owner2.address);
+		});
+
+		it("Owner is able to pause", async () => {
+			await expect(stakingContract.pause())
+				.to.emit(stakingContract, 'Paused')
+				.withArgs(owner.address);
+		});
+
+		it("Reverts when paused", async () => {
+			// Pause the contract
+			await expect(stakingContract.pause())
+				.to.emit(stakingContract, 'Paused')
+				.withArgs(owner.address);
+
+			// owner set 500 PREZRV as token limit for NFT unlocking
+			await expect(
+			stakingContract.connect(owner).setNFTUnlockTokenLimit(BigNumber.from("500000000000000000000")))
+				.to.be.revertedWith("Pausable: paused");
+
+		});
+
   });
 
 });
-
-
-
-/*  beforeEach(async () => {
-	const [deployer] = await ethers.getSigners();
-	const tokenFactory = new TestToken__factory(deployer);
-	const tokenContract = await tokenFactory.deploy();
-	tokenAddress = tokenContract.address;
-
-	expect(await tokenContract.totalSupply()).to.eq(0);
-  });
-  describe("Mint", async () => {
-	it("Should mint some tokens", async () => {
-	  const [deployer, user] = await ethers.getSigners();
-	  const tokenInstance = new TestToken__factory(deployer).attach(tokenAddress);
-	  const toMint = ethers.utils.parseEther("1");
-
-	  await tokenInstance.mint(user.address, toMint);
-	  expect(await tokenInstance.totalSupply()).to.eq(toMint);
-	});
-  });
-
-  describe("Transfer", async () => {
-	it("Should transfer tokens between users", async () => {
-	  const [deployer, sender, receiver] = await ethers.getSigners();
-	  const deployerInstance = new Staking__factory(deployer).attach(tokenAddress);
-	  const toMint = ethers.utils.parseEther("1");
-
-	  await deployerInstance.mint(sender.address, toMint);
-	  expect(await deployerInstance.balanceOf(sender.address)).to.eq(toMint);
-
-	  const senderInstance = new Staking__factory(sender).attach(tokenAddress);
-	  const toSend = ethers.utils.parseEther("0.4");
-	  await senderInstance.transfer(receiver.address, toSend);
-
-	  expect(await senderInstance.balanceOf(receiver.address)).to.eq(toSend);
-	});
-
-	it("Should fail to transfer with low balance", async () => {
-	  const [deployer, sender, receiver] = await ethers.getSigners();
-	  const deployerInstance = new Staking__factory(deployer).attach(tokenAddress);
-	  const toMint = ethers.utils.parseEther("1");
-
-	  await deployerInstance.mint(sender.address, toMint);
-	  expect(await deployerInstance.balanceOf(sender.address)).to.eq(toMint);
-
-	  const senderInstance = new Staking__factory(sender).attach(tokenAddress);
-	  const toSend = ethers.utils.parseEther("1.1");
-
-	  // Notice await is on the expect
-	  await expect(senderInstance.transfer(receiver.address, toSend)).to.be.revertedWith(
-		"transfer amount exceeds balance",
-	  );
-	});
-  });
-*/
-
