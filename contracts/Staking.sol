@@ -57,12 +57,12 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     // ==========Functions==========================================
     /// @notice User Stake tokens
     /// @dev User approve tokens & then use this function
-    /// @param _token token contract address
+    /// @param account address to where amount is staked. NOTE: msg.sender is not considered so that 
+    ///         any third party address can stake for another address
     /// @param _amount token amount for staking
-    function stake(IERC20 _token, address account, uint256 _amount) external whenNotPaused nonReentrant {
-        require(_token != stakingToken, "Invalid token");
-        require(account != address(0), "account must be non-zero");
-        require(_amount > 0, "amount must be positive");
+    function stake(address account, uint256 _amount) external whenNotPaused nonReentrant {
+        require(account != address(0), "Account must be non-zero");
+        require(_amount > 0, "Amount must be positive");
 
         // read the total staked amount
         uint256 totStakedAmt = totalBalances[account];
@@ -77,7 +77,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         // transfer to SC using delegate transfer
         // NOTE: the tokens has to be approved first by the caller to the SC using `approve()` method.
         bool success = stakingToken.transferFrom(_msgSender(), address(this), _amount);
-        require(success, "stakingToken.transferFrom function failed");
+        require(success, "StakingToken transferFrom function failed");
         emit TokenStaked(_msgSender(), _amount, block.timestamp);
     }
 
@@ -86,7 +86,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     /// @dev accessible by Owner
     /// @param amount the amount to be updated as the new token limit
     function setNFTUnlockTokenLimit(uint256 amount) external onlyOwner whenNotPaused {
-        require(amount > 0, "amount must be positive");
+        require(amount > 0, "Amount must be positive");
 
         nftUnlockTokenLimit = amount;
         emit NFTUnlockTokenLimitSet(amount, block.timestamp);
@@ -97,7 +97,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     /// @dev accessible by Owner
     /// @param amount the amount to be updated as the new token limit
     function setNFTServTokenLimit(uint256 amount) external onlyOwner whenNotPaused {
-        require(amount > 0, "amount must be positive");
+        require(amount > 0, "Amount must be positive");
 
         nftServTokenLimit = amount;
         emit NFTServTokenLimitSet(amount, block.timestamp);
@@ -108,7 +108,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     /// @dev accessible by Owner
     /// @param amount the amount to be updated as the new token limit
     function setDAOTokenLimit(uint256 amount) external onlyOwner whenNotPaused {
-        require(amount > 0, "amount must be positive");
+        require(amount > 0, "Amount must be positive");
 
         daoTokenLimit = amount;
         emit DAOTokenLimitSet(amount, block.timestamp);

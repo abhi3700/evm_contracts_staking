@@ -11,7 +11,7 @@ const { expect } = chai;
 
 describe("Staking contract", () => {
 	let stakingContractAddress: string;
-	let signers: Array<Signer>
+	let signers: Array<Signer>;
 	let owner : SignerWithAddress, 
 		owner2 : SignerWithAddress, 
 		addr1 : SignerWithAddress, 
@@ -20,6 +20,9 @@ describe("Staking contract", () => {
 		addr4 : SignerWithAddress;
 	let token: Contract,
 	  	stakingContract: Contract;
+
+	const MAX_UINT256 = ethers.constants.MaxUint256
+	const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 	beforeEach(async () => {
 		// get signers
@@ -42,6 +45,7 @@ describe("Staking contract", () => {
 		// deploy token contract
 		const tokenFactory = await ethers.getContractFactory('Token');
 		token = await tokenFactory.deploy();
+		// console.log(`Token contract address: ${token.address}`);
 
 		// console.log(`Token owner: ${await token.owner()}`);
 
@@ -65,41 +69,36 @@ describe("Staking contract", () => {
 		const stakingFactory = await ethers.getContractFactory('Staking');
 		stakingContract = await stakingFactory.deploy(token.address);
 		stakingContractAddress = stakingContract.address;
+		// console.log(`Staking contract address: ${stakingContract.address}`);
 
 		expect(stakingContractAddress).to.not.eq(0);
 
 		// console.log(`Staking owner: ${await stakingContract.owner()}`);
 
 		// mint 10,000 tokens to each addr1, addr2, addr3
-		// await token.connect(owner.address).mint(addr1.address, String(1e22));
-		// await token.connect(owner.address).mint(addr2.address, String(1e22));
 		await token.mint(addr1.address, BigNumber.from("10000000000000000000000"));
 		await token.mint(addr2.address, BigNumber.from("10000000000000000000000"));
 		await token.mint(addr3.address, BigNumber.from("10000000000000000000000"));
 
-		// verify balance of addr1, addr2, addr3 as 10k PREZRV tokens
+		// verify 10,000 tokens as balance of addr1, addr2, addr3
 		expect(await token.balanceOf(addr1.address)).to.eq(BigNumber.from("10000000000000000000000"));
 		expect(await token.balanceOf(addr2.address)).to.eq(BigNumber.from("10000000000000000000000"));
 		expect(await token.balanceOf(addr3.address)).to.eq(BigNumber.from("10000000000000000000000"));
+
 	});
 
 	describe("Stake function", async () => {
-		it("Reverts when wrong token address is parsed", async () => {
-			// Ensure that the staking contract is created
-			// console.log(`Staking owner: ${await stakingContract.owner()}`);
-
-			// first approve the 1e20 i.e. 100 PREZRV tokens to the contract
-			token.connect(addr3).approve(stakingContract.address, BigNumber.from("100000000000000000000"));
-			// console.log(await token.allowance(addr3.address, stakingContract.address));
-			// await expect(token.allowance(addr3.address, stakingContract.address)).to.eq(BigNumber.from("100000000000000000000"));
-			// await expect(token.allowance(addr3.address, stakingContract.address)).to.eq(String("100000000000000000000"));
+		it("Reverts when amount is zero", async () => {
+			// console.log(`Token owner: ${await token.owner()}`);
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
 
 			// parse addr1 as token contract address into stake() function
 			// parse addr2 as the account where staked,
-			// parse 1e20 i.e. 100 PREZRV tokens as the 
+			// parse 0 PREZRV tokens
 			await expect(
-			stakingContract.connect(addr3).stake(addr1.address, addr2.address, BigNumber.from("100000000000000000000")))
-				.to.be.revertedWith("Invalid token");
+			stakingContract.connect(addr3).stake(addr2.address, BigNumber.from(0)))
+				.to.be.revertedWith("Amount must be positive");
 		});
 
 		it("Owner is able to transfer ownership", async () => {
@@ -121,14 +120,14 @@ describe("Staking contract", () => {
 				.withArgs(owner.address);
 
 			// Execute the `stake` function
-			// first approve the 1e20 i.e. 100 PREZRV tokens to the contract
-			token.connect(addr3).approve(stakingContract.address, BigNumber.from("100000000000000000000"));
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
 
 			// parse addr1 as token contract address into stake() function
 			// parse addr2 as the account where staked,
-			// parse 1e20 i.e. 100 PREZRV tokens as the 
+			// parse 1e19 i.e. 10 PREZRV tokens 
 			await expect(
-			stakingContract.connect(addr3).stake(token.address, addr2.address, BigNumber.from("100000000000000000000")))
+			stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
 				.to.be.revertedWith("Pausable: paused");
 
 		});
