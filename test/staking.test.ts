@@ -96,6 +96,46 @@ describe("Staking contract", () => {
 
 	});
 
+	describe("Ownable", async () => {
+		it("Owner is able to transfer ownership", async () => {
+			await expect(stakingContract.transferOwnership(owner2.address))
+				.to.emit(stakingContract, 'OwnershipTransferred')
+				.withArgs(owner.address, owner2.address);
+		});
+	});
+
+	describe("Pausable", async () => {
+		it("Owner is able to pause when NOT paused", async () => {
+			await expect(stakingContract.pause())
+				.to.emit(stakingContract, 'Paused')
+				.withArgs(owner.address);
+		});
+
+		it("Owner is able to unpause when already paused", async () => {
+			stakingContract.pause();
+
+			await expect(stakingContract.unpause())
+				.to.emit(stakingContract, 'Unpaused')
+				.withArgs(owner.address);
+		});
+
+		it("Owner is NOT able to pause when already paused", async () => {
+			stakingContract.pause();
+
+			await expect(stakingContract.pause())
+				.to.be.revertedWith("Pausable: paused");
+		});
+
+		it("Owner is NOT able to unpause when already unpaused", async () => {
+			stakingContract.pause();
+
+			stakingContract.unpause();
+
+			await expect(stakingContract.unpause())
+				.to.be.revertedWith("Pausable: not paused");
+		});
+	});
+
 	describe("Stake", async () => {
 		it("Succeeds with staking", async () => {
 			// console.log(`Token owner: ${await token.owner()}`);
@@ -137,18 +177,6 @@ describe("Staking contract", () => {
 				.to.be.revertedWith("Amount must be positive");
 		});
 
-		it("Owner is able to transfer ownership", async () => {
-			await expect(stakingContract.transferOwnership(owner2.address))
-				.to.emit(stakingContract, 'OwnershipTransferred')
-				.withArgs(owner.address, owner2.address);
-		});
-
-		it("Owner is able to pause", async () => {
-			await expect(stakingContract.pause())
-				.to.emit(stakingContract, 'Paused')
-				.withArgs(owner.address);
-		});
-
 		it("Reverts when paused", async () => {
 			// Pause the contract
 			await expect(stakingContract.pause())
@@ -165,14 +193,21 @@ describe("Staking contract", () => {
 			await expect(
 			stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
 				.to.be.revertedWith("Pausable: paused");
-
 		});
 
  	});
 
 	describe("Set token limit for NFT unlocking", async () => {
+		it("Succeeds in setting token limit", async () => {
+			// owner set 500 PREZRV as token limit for NFT unlocking
+			await expect(
+			stakingContract.connect(owner).setNFTUnlockTokenLimit(BigNumber.from("500000000000000000000")))
+				.to.emit(stakingContract, 'NFTUnlockTokenLimitSet');
+				// .withArgs(BigNumber.from("500000000000000000000"), await getCurrentBlockTimestamp());
+		});
+
 		it("Reverts when limit set by non-owner", async () => {
-			// addr3 set 0 PREZRV as token limit for NFT unlocking
+			// addr3 set 500 PREZRV as token limit for NFT unlocking
 			await expect(
 			stakingContract.connect(addr3).setNFTUnlockTokenLimit(BigNumber.from("500000000000000000000")))
 				.to.be.revertedWith("Ownable: caller is not the owner");
@@ -185,18 +220,6 @@ describe("Staking contract", () => {
 				.to.be.revertedWith("Amount must be positive");
 		});
 
-		it("Owner is able to transfer ownership", async () => {
-			await expect(stakingContract.transferOwnership(owner2.address))
-				.to.emit(stakingContract, 'OwnershipTransferred')
-				.withArgs(owner.address, owner2.address);
-		});
-
-		it("Owner is able to pause", async () => {
-			await expect(stakingContract.pause())
-				.to.emit(stakingContract, 'Paused')
-				.withArgs(owner.address);
-		});
-
 		it("Reverts when paused", async () => {
 			// Pause the contract
 			await expect(stakingContract.pause())
@@ -207,9 +230,83 @@ describe("Staking contract", () => {
 			await expect(
 			stakingContract.connect(owner).setNFTUnlockTokenLimit(BigNumber.from("500000000000000000000")))
 				.to.be.revertedWith("Pausable: paused");
-
 		});
 
-  });
+	});
+
+	describe("Set token limit for NFT services", async () => {
+		it("Succeeds in setting token limit", async () => {
+			// owner set 1000 PREZRV as token limit for NFT unlocking
+			await expect(
+			stakingContract.setNFTServTokenLimit(BigNumber.from("1000000000000000000000")))
+				.to.emit(stakingContract, 'NFTServTokenLimitSet');
+				// .withArgs(BigNumber.from("1000000000000000000000"), await getCurrentBlockTimestamp());
+		});
+
+		it("Reverts when limit set by non-owner", async () => {
+			// addr3 set 1000 PREZRV as token limit for NFT services
+			await expect(
+			stakingContract.connect(addr3).setNFTServTokenLimit(BigNumber.from("1000000000000000000000")))
+				.to.be.revertedWith("Ownable: caller is not the owner");
+		});
+
+		it("Reverts when amount is zero", async () => {
+			// owner set 0 PREZRV as token limit for NFT services
+			await expect(
+			stakingContract.connect(owner).setNFTServTokenLimit(BigNumber.from(0)))
+				.to.be.revertedWith("Amount must be positive");
+		});
+
+		it("Reverts when paused", async () => {
+			// Pause the contract
+			await expect(stakingContract.pause())
+				.to.emit(stakingContract, 'Paused')
+				.withArgs(owner.address);
+
+			// owner set 1000 PREZRV as token limit for NFT services
+			await expect(
+			stakingContract.connect(owner).setNFTServTokenLimit(BigNumber.from("1000000000000000000000")))
+				.to.be.revertedWith("Pausable: paused");
+		});
+
+	});
+
+	describe("Set token limit for DAO", async () => {
+		it("Succeeds in setting token limit", async () => {
+			// owner set 1500 PREZRV as token limit for DAO
+			await expect(
+			stakingContract.setDAOTokenLimit(BigNumber.from("1500000000000000000000")))
+				.to.emit(stakingContract, 'DAOTokenLimitSet');
+				// .withArgs(BigNumber.from("1500000000000000000000"), await getCurrentBlockTimestamp());
+		});
+
+		it("Reverts when limit set by non-owner", async () => {
+			// addr3 set 1500 PREZRV as token limit for DAO
+			await expect(
+			stakingContract.connect(addr3).setDAOTokenLimit(BigNumber.from("1500000000000000000000")))
+				.to.be.revertedWith("Ownable: caller is not the owner");
+		});
+
+		it("Reverts when amount is zero", async () => {
+			// owner set 0 PREZRV as token limit for DAO
+			await expect(
+			stakingContract.connect(owner).setDAOTokenLimit(BigNumber.from(0)))
+				.to.be.revertedWith("Amount must be positive");
+		});
+
+		it("Reverts when paused", async () => {
+			// Pause the contract
+			await expect(stakingContract.pause())
+				.to.emit(stakingContract, 'Paused')
+				.withArgs(owner.address);
+
+			// owner set 1500 PREZRV as token limit for NFT services
+			await expect(
+			stakingContract.connect(owner).setDAOTokenLimit(BigNumber.from("1500000000000000000000")))
+				.to.be.revertedWith("Pausable: paused");
+		});
+
+	});
+
 
 });
