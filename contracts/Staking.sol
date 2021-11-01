@@ -35,7 +35,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     // }
 
     // user -> (timestamp -> stakeAmt) 
-    mapping (address => mapping( uint256 => stakeAmt ) ) public balances;
+    mapping (address => mapping( uint256 => uint256 ) ) public balances;
     // mapping( address => Stake[] ) public balances;
 
     // user -> timestamps[]
@@ -54,7 +54,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     // mapping (address => Stake[]) public balances;
 
     // ==========Events=============================================
-    event TokenStaked(address indexed staker, address indexed stakedFor, uint256 indexed amount, uint256 indexed stakeTimestamp);
+    event TokenStaked(address indexed staker, address indexed stakedFor, uint256 indexed amount, uint256 stakeTimestamp);
     event TokenUnstakedAt(address indexed unstaker, uint256 indexed amount, uint256 indexed stakeTimestamp);
     event NFTUnlockTokenLimitSet(uint256 indexed amount, uint256 indexed setTimestamp);
     event NFTServTokenLimitSet(uint256 indexed amount, uint256 indexed setTimestamp);
@@ -89,7 +89,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         // balances[account].push(newStaking);
 
         // append the timestamp
-        userTimestamps.push(block.timestamp);
+        userTimestamps[account].push(block.timestamp);
 
         // update the total staked amount
         totalBalances[account] = totStakedAmt.add(_amount);
@@ -119,8 +119,10 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         require(balances[_msgSender()][_timestamp] >= _amount, "Insufficient staked amount at this timestamp");
 
         // get position of element in array
-        uint256 pos = _getArrIdx(userTimestamps, _timestamp);
-        require(pos != -1, "Invalid Timestamp for user");
+        bool found = false;
+        uint256 pos = 0;
+        (found, pos) = _getArrIdx(userTimestamps[_msgSender()], _timestamp);
+        require(found, "Invalid stake timestamp for user");
 
         // read the staked amount at timestamp
         uint256 stakedAmt = balances[_msgSender()][_timestamp];
@@ -128,10 +130,13 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         // update the balances
         balances[_msgSender()][_timestamp] = stakedAmt.sub(_amount);
 
-
+        // update the userTimestamps
         if (stakedAmt == _amount) {
-            _removebyIndex(userTimestamps, pos);
+            _removebyIndex(userTimestamps[_msgSender()], pos);
         }
+
+        // update the totalBalances
+        totalBalances[_msgSender()] = totalBalances[_msgSender()].sub(_amount);
 
         TokenUnstakedAt(_msgSender(), _amount, block.timestamp);
     }
@@ -178,10 +183,10 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     function getStakedAmtAtTstamp(address account, uint256 timestamp) public view returns (uint256) {
         require(account != address(0), "Invalid address");
         require(totalBalances[account] != 0, "No staking done for this account");
-        require(balances[account][timestamp].amount != 0, "No staking done for this account at parsed timestamp");
+        require(balances[account][timestamp] != 0, "No staking done for this account at parsed timestamp");
         require(timestamp > 0 && timestamp > block.timestamp, "Invalid timestamp");
 
-        return balances[account][timestamp].amount;
+        return balances[account][timestamp];
     }
 
     // -------------------------------------------------------------
@@ -190,7 +195,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     /// @param account account for which total staked amount by timestamp is asked for
     /// @param timestamp timestamp by which total staked amount is returned
     /// @return total staked amount till timestamp
-    function getStakedTotAmtTillTstamp(address account, uint256 timestamp) public view returns (uint256) {
+/*    function getStakedTotAmtTillTstamp(address account, uint256 timestamp) public view returns (uint256) {
         require(account != address(0), "Invalid address");
         require(totalBalances[account] != 0, "No staking done for this account");
         require(balances[account][timestamp].stakedAmtTotYet != 0, "No staking done for this account till this timestamp");
@@ -198,7 +203,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
 
         return balances[account][timestamp].stakedAmtTotYet;
     }
-
+*/
     // -------------------------------------------------------------
     /// @notice Anyone can view total staked amount of a user till date
     /// @dev no permission required
@@ -220,11 +225,30 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         require(account != address(0), "Invalid address");
         require(totalBalances[account] != 0, "No staking done for this account");
 
-        uint256 stakedAmountTot = totalBalances[account];
+        uint256 stakedAmountTot = 0;
+        uint256[] memory usrTstamps = userTimestamps[account];
 
-        if (stakedAmountTot >= 500) return 1;
-        else if (stakedAmountTot >= 1000) return 2;
-        else if (stakedAmountTot >= 1500) return 3;
+        // sum the staked amounts if 1 month is elapsed
+        for (uint256 i = 0; i < usrTstamps.length; ++i) {
+            if( (usrTstamps[i].sub(block.timestamp) >= STAKE_DURATION) &&
+                (balances[account][usrTstamps[i]] != 0) ) 
+            {
+                stakedAmountTot = stakedAmountTot.add(balances[account][usrTstamps[i]]);
+
+                // Check if total staked amount is greatest out of all limits
+                // to break out of the for-loop
+                if( (stakedAmountTot >= nftUnlockTokenLimit) &&
+                    (stakedAmountTot >= nftServTokenLimit) &&
+                    (stakedAmountTot >= daoTokenLimit) )
+                {
+                    break;
+                }
+            }
+        }
+
+        if (stakedAmountTot >= nftUnlockTokenLimit) return 1;
+        else if (stakedAmountTot >= nftServTokenLimit) return 2;
+        else if (stakedAmountTot >= daoTokenLimit) return 3;
         else return 0;
     }
 
@@ -241,22 +265,24 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
 
     // ------------------------------------------------------------------------------------------
     /// @notice Get index of element in array
-    function _getArrIdx(uint256[] arr, uint256 elem) private returns (int256) {
-        uint256 idx = -1;
+    function _getArrIdx(uint256[] memory arr, uint256 elem) private pure returns (bool, uint256) {
+        bool found = false;
+        uint256 idx = 0;
 
         for (uint256 i = 0; i < arr.length; ++i) {
-            if (arr[i] = elem) {
+            if (arr[i] == elem) {
+                found = true;
                 idx = i;
                 break;
             }
         }
 
-        return idx;
+        return (found, idx);
     }
 
     // ------------------------------------------------------------------------------------------
     // @notice remove element (by index) from array 
-    function _removebyIndex(uint256[] arr, uint256 index) private {
+    function _removebyIndex(uint256[] storage arr, uint256 index) private {
         // M-1
         // delete arr[index];         // consumes 5000 gas. So, it's not recommended.
         
