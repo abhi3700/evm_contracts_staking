@@ -28,20 +28,34 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     // Stake struct type for balances variable
     // stores total staked amount yet from the beginning till 
     // the timestamp (referred to) for an address
-    struct Stake {
-        uint256 amount;
-        uint256 stakedAmtTotYet;
-    }
+    // struct Stake {
+    //     uint256 timestamp;
+    //     uint256 amount;
+    //     // uint256 stakedAmtTotYet;
+    // }
 
     // user -> (timestamp -> stakeAmt) 
-    mapping (address => mapping(uint256 => Stake) ) public balances;
+    mapping (address => mapping( uint256 => stakeAmt ) ) public balances;
+    // mapping( address => Stake[] ) public balances;
+
+    // user -> timestamps[]
+    mapping (address => uint256[]) public userTimestamps;
 
     // stores total staked amount from the beginning for an address
     // user -> totalStakedAmt
     mapping (address => uint256) totalBalances;
 
+    // Stake struct type for balances variable
+    // struct Stake {
+    //     uint256 stakeTimestamp;
+    // }
+
+    // user -> Stake[]
+    // mapping (address => Stake[]) public balances;
+
     // ==========Events=============================================
-    event TokenStaked(address indexed staker, uint256 indexed amount, uint256 indexed stakeTimestamp);
+    event TokenStaked(address indexed staker, address indexed stakedFor, uint256 indexed amount, uint256 indexed stakeTimestamp);
+    event TokenUnstakedAt(address indexed unstaker, uint256 indexed amount, uint256 indexed stakeTimestamp);
     event NFTUnlockTokenLimitSet(uint256 indexed amount, uint256 indexed setTimestamp);
     event NFTServTokenLimitSet(uint256 indexed amount, uint256 indexed setTimestamp);
     event DAOTokenLimitSet(uint256 indexed amount, uint256 indexed setTimestamp);
@@ -68,8 +82,14 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         uint256 totStakedAmt = totalBalances[account];
 
         // update the balances
-        balances[account][block.timestamp].amount = _amount;
-        balances[account][block.timestamp].stakedAmtTotYet = totStakedAmt.add(_amount);
+        balances[account][block.timestamp] = _amount;
+        // balances[account][block.timestamp].stakedAmtTotYet = totStakedAmt.add(_amount);
+
+        // Stake memory newStaking = Stake(block.timestamp, _amount);
+        // balances[account].push(newStaking);
+
+        // append the timestamp
+        userTimestamps.push(block.timestamp);
 
         // update the total staked amount
         totalBalances[account] = totStakedAmt.add(_amount);
@@ -78,7 +98,42 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         // NOTE: the tokens has to be approved first by the caller to the SC using `approve()` method.
         bool success = stakingToken.transferFrom(_msgSender(), address(this), _amount);
         require(success, "StakingToken transferFrom function failed");
-        emit TokenStaked(_msgSender(), _amount, block.timestamp);
+        emit TokenStaked(_msgSender(), account, _amount, block.timestamp);
+    }
+
+    // function unstake(uint256 _amount, bool fromBegin) external whenNotPaused nonReentrant {
+    //     require(_amount > 0, "Amount must be positive");
+    //     require(totalBalances[_msgSender()] >= _amount, "Insufficient staked amount");
+
+    //     if(fromBegin) {
+
+    //     } else {
+
+    //     }
+
+    // }
+
+    function unstakeAt(uint256 _timestamp, uint256 _amount) external whenNotPaused nonReentrant {
+        require(_timestamp > block.timestamp, "Timestamp must be greated than current timestamp");
+        require(_amount > 0, "Amount must be positive");
+        require(balances[_msgSender()][_timestamp] >= _amount, "Insufficient staked amount at this timestamp");
+
+        // get position of element in array
+        uint256 pos = _getArrIdx(userTimestamps, _timestamp);
+        require(pos != -1, "Invalid Timestamp for user");
+
+        // read the staked amount at timestamp
+        uint256 stakedAmt = balances[_msgSender()][_timestamp];
+
+        // update the balances
+        balances[_msgSender()][_timestamp] = stakedAmt.sub(_amount);
+
+
+        if (stakedAmt == _amount) {
+            _removebyIndex(userTimestamps, pos);
+        }
+
+        TokenUnstakedAt(_msgSender(), _amount, block.timestamp);
     }
 
     // -------------------------------------------------------------
@@ -184,4 +239,34 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         _unpause();
     }
 
+    // ------------------------------------------------------------------------------------------
+    /// @notice Get index of element in array
+    function _getArrIdx(uint256[] arr, uint256 elem) private returns (int256) {
+        uint256 idx = -1;
+
+        for (uint256 i = 0; i < arr.length; ++i) {
+            if (arr[i] = elem) {
+                idx = i;
+                break;
+            }
+        }
+
+        return idx;
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // @notice remove element (by index) from array 
+    function _removebyIndex(uint256[] arr, uint256 index) private {
+        // M-1
+        // delete arr[index];         // consumes 5000 gas. So, it's not recommended.
+        
+        require(index >= 0 && index < arr.length, "Invalid index at removebyIndex()");
+        
+        // M-2
+        for(uint256 i = index; i < arr.length-1; ++i) {
+            arr[i] = arr[i+1];
+        }
+        
+        arr.pop();     // reduce the array length for v0.6+
+    }
 }
