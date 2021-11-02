@@ -10,7 +10,7 @@ import '@openzeppelin/contracts/utils/Context.sol';
 import 'hardhat/console.sol';
 
 /**
- * @notice A Staking contract for PREZRV
+ * @title A Staking contract for PREZRV
  */
 contract Staking is Ownable, Pausable, ReentrancyGuard {
     using SafeMath for uint256;
@@ -25,33 +25,15 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     uint256 public daoTokenLimit;
     uint256 constant public STAKE_DURATION = 2_629_746;     // 1 month in seconds
 
-    // Stake struct type for balances variable
-    // stores total staked amount yet from the beginning till 
-    // the timestamp (referred to) for an address
-    // struct Stake {
-    //     uint256 timestamp;
-    //     uint256 amount;
-    //     // uint256 stakedAmtTotYet;
-    // }
-
     // user -> (timestamp -> stakeAmt) 
     mapping (address => mapping( uint256 => uint256 ) ) public balances;
-    // mapping( address => Stake[] ) public balances;
 
     // user -> timestamps[]
     mapping (address => uint256[]) public userTimestamps;
 
-    // stores total staked amount from the beginning for an address
+    // stores total staked amount for an address
     // user -> totalStakedAmt
     mapping (address => uint256) totalBalances;
-
-    // Stake struct type for balances variable
-    // struct Stake {
-    //     uint256 stakeTimestamp;
-    // }
-
-    // user -> Stake[]
-    // mapping (address => Stake[]) public balances;
 
     // ==========Events=============================================
     event TokenStaked(address indexed staker, address indexed stakedFor, uint256 indexed amount, uint256 stakeTimestamp);
@@ -74,7 +56,8 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     /// @param account address to where amount is staked. NOTE: msg.sender is not considered so that 
     ///         any third party address can stake for another address
     /// @param _amount token amount for staking
-    function stake(address account, uint256 _amount) external whenNotPaused nonReentrant {
+    /// @return true as execution status
+    function stake(address account, uint256 _amount) external whenNotPaused nonReentrant returns (bool) {
         require(account != address(0), "Account must be non-zero");
         require(_amount > 0, "Amount must be positive");
 
@@ -97,31 +80,25 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         // transfer to SC using delegate transfer
         // NOTE: the tokens has to be approved first by the caller to the SC using `approve()` method.
         bool success = stakingToken.transferFrom(_msgSender(), address(this), _amount);
-        require(success, "StakingToken transferFrom function failed");
+        require(success, "Stake: transferFrom function failed");
+
         emit TokenStaked(_msgSender(), account, _amount, block.timestamp);
+
+        return true;
     }
 
-    // function unstake(uint256 _amount, bool fromBegin) external whenNotPaused nonReentrant {
-    //     require(_amount > 0, "Amount must be positive");
-    //     require(totalBalances[_msgSender()] >= _amount, "Insufficient staked amount");
-
-    //     if(fromBegin) {
-
-    //     } else {
-
-    //     }
-
-    // }
-
-    function unstakeAt(uint256 _timestamp, uint256 _amount) external whenNotPaused nonReentrant {
+    /// @notice User unstake tokens
+    /// @dev unstake at available timestamps in form of drop-down menu option shown in UI
+    /// @param _timestamp at which the unstake is requested for
+    /// @param _amount amount requested for unstaking
+    /// @return true as execution status
+    function unstakeAt(uint256 _timestamp, uint256 _amount) external whenNotPaused nonReentrant returns (bool) {
         require(_timestamp > block.timestamp, "Timestamp must be greated than current timestamp");
         require(_amount > 0, "Amount must be positive");
         require(balances[_msgSender()][_timestamp] >= _amount, "Insufficient staked amount at this timestamp");
 
-        // get position of element in array
-        bool found = false;
-        uint256 pos = 0;
-        (found, pos) = _getArrIdx(userTimestamps[_msgSender()], _timestamp);
+        // get found status & position of element in array
+        (bool found, uint256 pos) = _getArrIdx(userTimestamps[_msgSender()], _timestamp);
         require(found, "Invalid stake timestamp for user");
 
         // read the staked amount at timestamp
@@ -138,40 +115,58 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         // update the totalBalances
         totalBalances[_msgSender()] = totalBalances[_msgSender()].sub(_amount);
 
-        TokenUnstakedAt(_msgSender(), _amount, block.timestamp);
+        // transfer back requested PREZRV tokens to caller using delegate transfer
+        bool success = stakingToken.transfer(_msgSender(), _amount);
+        require(success, "Unstake: transfer function failed.");
+
+        emit TokenUnstakedAt(_msgSender(), _amount, block.timestamp);
+
+        return true;
     }
 
     // -------------------------------------------------------------
     /// @notice Admin set token limit for unlocking NFTs to users
     /// @dev accessible by Owner
     /// @param amount the amount to be updated as the new token limit
-    function setNFTUnlockTokenLimit(uint256 amount) external onlyOwner whenNotPaused {
+    /// @return true as execution status
+    function setNFTUnlockTokenLimit(uint256 amount) external onlyOwner whenNotPaused returns (bool) {
         require(amount > 0, "Amount must be positive");
 
         nftUnlockTokenLimit = amount;
+
         emit NFTUnlockTokenLimitSet(amount, block.timestamp);
+
+        return true;
     }
 
     // -------------------------------------------------------------
     /// @notice Admin set token limit for unlocking NFT related services to users
     /// @dev accessible by Owner
     /// @param amount the amount to be updated as the new token limit
-    function setNFTServTokenLimit(uint256 amount) external onlyOwner whenNotPaused {
+    /// @return true as execution status
+    function setNFTServTokenLimit(uint256 amount) external onlyOwner whenNotPaused returns (bool) {
         require(amount > 0, "Amount must be positive");
 
         nftServTokenLimit = amount;
+
         emit NFTServTokenLimitSet(amount, block.timestamp);
+
+        return true;
     }
 
     // -------------------------------------------------------------
     /// @notice Admin set token limit for accessing DAO to users
     /// @dev accessible by Owner
     /// @param amount the amount to be updated as the new token limit
-    function setDAOTokenLimit(uint256 amount) external onlyOwner whenNotPaused {
+    /// @return true as execution status
+    function setDAOTokenLimit(uint256 amount) external onlyOwner whenNotPaused returns (bool) {
         require(amount > 0, "Amount must be positive");
 
         daoTokenLimit = amount;
+
         emit DAOTokenLimitSet(amount, block.timestamp);
+
+        return true;
     }
 
     // -------------------------------------------------------------
@@ -263,8 +258,11 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         _unpause();
     }
 
-    // ------------------------------------------------------------------------------------------
+    // -------------UTILITY---------------------------------------------------------------------
     /// @notice Get index of element in array
+    /// @param arr array from which the index of an element is to be found
+    /// @param elem item to be searched in the array
+    /// @return found status & index of element
     function _getArrIdx(uint256[] memory arr, uint256 elem) private pure returns (bool, uint256) {
         bool found = false;
         uint256 idx = 0;
@@ -281,7 +279,9 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     }
 
     // ------------------------------------------------------------------------------------------
-    // @notice remove element (by index) from array 
+    /// @notice remove element (by index) from array
+    /// @param arr array from where the item to be removed by index
+    /// @param index the element of which is to be removed from the array
     function _removebyIndex(uint256[] storage arr, uint256 index) private {
         // M-1
         // delete arr[index];         // consumes 5000 gas. So, it's not recommended.
