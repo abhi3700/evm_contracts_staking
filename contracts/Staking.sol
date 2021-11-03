@@ -93,7 +93,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     /// @param _amount amount requested for unstaking
     /// @return true as execution status
     function unstakeAt(uint256 _timestamp, uint256 _amount) external whenNotPaused nonReentrant returns (bool) {
-        require(_timestamp > block.timestamp, "Timestamp must be greated than current timestamp");
+        require(_timestamp < block.timestamp, "Stake timestamp must be less than the current timestamp");
         require(_amount > 0, "Amount must be positive");
         require(balances[_msgSender()][_timestamp] >= _amount, "Insufficient staked amount at this timestamp");
 

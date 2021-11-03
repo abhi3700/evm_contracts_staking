@@ -197,6 +197,105 @@ describe("Staking contract", () => {
 
  	});
 
+	describe("Unstake", async () => {
+		it("Succeeds with unstaking", async () => {
+			// TODO: check balance of addr2
+
+			// console.log(`Token owner: ${await token.owner()}`);
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
+
+      		// const currentTimestamp = await getCurrentBlockTimestamp();
+
+			// addr3 stake 1e19 i.e. 10 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+				// .withArgs(addr3.address, BigNumber.from("10000000000000000000"), await getCurrentBlockTimestamp());
+
+			// TODO: read latest timestamp by last index added into the userTimestamps
+
+			// TODO: unstake at the last timestamp
+
+			// TODO: check balance of addr2 is same as before
+
+		});
+
+		it("Reverts when parsed timestamp is greater than the current timestamp", async () => {
+			// console.log(`Token owner: ${await token.owner()}`);
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
+
+			/// addr3 stake 1e19 i.e. 10 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+
+			// TODO: unstake at the (current timestamp + 1)
+
+		});
+
+		it("Reverts when amount is zero", async () => {
+			// console.log(`Token owner: ${await token.owner()}`);
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
+
+			// addr3 stake 1e19 i.e. 10 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+
+			// TODO: read latest timestamp by last index added into the userTimestamps
+
+			// TODO: unstake at the last timestamp with zero amount
+		});
+
+		it("Reverts due to insufficient stake amount at timestamp", async () => {
+			// console.log(`Token owner: ${await token.owner()}`);
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
+
+			// addr3 stake 1e19 i.e. 10 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+
+			// TODO: read latest timestamp by last index added into the userTimestamps
+
+			// TODO: unstake at the last timestamp with 11 amount
+		});
+
+		it("Reverts due to invalid stake timestamp", async () => {
+			// console.log(`Token owner: ${await token.owner()}`);
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
+
+			// addr3 stake 1e19 i.e. 10 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+
+			// TODO: read latest timestamp by last index added into the userTimestamps
+
+			// TODO: unstake at the random timestamp with 5 amount
+		});
+
+		it("Reverts when paused", async () => {
+			// Pause the contract
+			await expect(stakingContract.pause())
+				.to.emit(stakingContract, 'Paused')
+				.withArgs(owner.address);
+
+			// Execute the `stake` function
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
+
+			/// addr3 stake 1e19 i.e. 10 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+
+			// TODO: read latest timestamp by last index added into the userTimestamps
+
+			// TODO: unstake at the last timestamp with zero amount
+		});
+
+ 	});
+
 	describe("Set token limit for NFT unlocking", async () => {
 		it("Succeeds in setting token limit", async () => {
 			// owner set 500 PREZRV as token limit for NFT unlocking
