@@ -211,6 +211,14 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         return totalBalances[account];
     }
 
+
+
+    // -------------------------------------------------------------
+    /// @notice Get latest stake timestamp for a user
+    function getLatTstamp(address account) public view returns (uint256) {
+        return userTimestamps[account][userTimestamps[account].length-1];
+    }
+
     // -------------------------------------------------------------
     /// @notice View User's status of eliqibility for getting access to platform features
     /// @dev viewable by anyone

@@ -198,8 +198,9 @@ describe("Staking contract", () => {
  	});
 
 	describe("Unstake", async () => {
-		it("Succeeds with unstaking", async () => {
+		it.only("Succeeds with unstaking", async () => {
 			// TODO: check balance of addr2
+			const addr2BalanceBefore = await token.balanceOf(addr2.address);
 
 			// console.log(`Token owner: ${await token.owner()}`);
 			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
@@ -213,10 +214,16 @@ describe("Staking contract", () => {
 				// .withArgs(addr3.address, BigNumber.from("10000000000000000000"), await getCurrentBlockTimestamp());
 
 			// TODO: read latest timestamp by last index added into the userTimestamps
+			const latestTimestamp = (await stakingContract.getLatTstamp(addr2.address)).toNumber();
+			// console.log(latestTimestamp);
 
 			// TODO: unstake at the last timestamp
+			await expect(stakingContract.connect(addr2).unstakeAt(latestTimestamp, /*String(1e19)*/BigNumber.from("10000000000000000000")))
+				.to.emit(stakingContract, "TokenUnstakedAt");
 
 			// TODO: check balance of addr2 is same as before
+			const addr2BalanceAfter = await token.balanceOf(addr2.address);
+			await expect(addr2BalanceAfter.sub(addr2BalanceBefore)).to.eq(0);
 
 		});
 
