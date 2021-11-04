@@ -95,11 +95,12 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     function unstakeAt(uint256 _timestamp, uint256 _amount) external whenNotPaused nonReentrant returns (bool) {
         require(_timestamp < block.timestamp, "Stake timestamp must be less than the current timestamp");
         require(_amount > 0, "Amount must be positive");
-        require(balances[_msgSender()][_timestamp] >= _amount, "Insufficient staked amount at this timestamp");
-
+        
         // get found status & position of element in array
         (bool found, uint256 pos) = _getArrIdx(userTimestamps[_msgSender()], _timestamp);
         require(found, "Invalid stake timestamp for user");
+
+        require(balances[_msgSender()][_timestamp] >= _amount, "Insufficient staked amount at this timestamp");
 
         // read the staked amount at timestamp
         uint256 stakedAmt = balances[_msgSender()][_timestamp];
@@ -115,9 +116,13 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         // update the totalBalances
         totalBalances[_msgSender()] = totalBalances[_msgSender()].sub(_amount);
 
+        // console.log("balance Before transfer during unstaking: %s", stakingToken.balanceOf(_msgSender()));
+
         // transfer back requested PREZRV tokens to caller using delegate transfer
         bool success = stakingToken.transfer(_msgSender(), _amount);
         require(success, "Unstake: transfer function failed.");
+
+        // console.log("balance After transfer during unstaking: %s", stakingToken.balanceOf(_msgSender()));
 
         emit TokenUnstakedAt(_msgSender(), _amount, block.timestamp);
 
