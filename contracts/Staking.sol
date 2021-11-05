@@ -219,8 +219,12 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
 
 
     // -------------------------------------------------------------
-    /// @notice Get latest stake timestamp for a user
-    function getLatTstamp(address account) public view returns (uint256) {
+    /// @notice Get last stake timestamp for a user
+    /// @param account account for which total staked amount is asked for
+    function getLastTstamp(address account) public view returns (uint256) {
+        require(account != address(0), "Invalid address");
+        require(totalBalances[account] != 0, "No staking done for this account");
+        
         return userTimestamps[account][userTimestamps[account].length-1];
     }
 

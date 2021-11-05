@@ -6,16 +6,16 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import GenericERC20Artifact from "../build/artifacts/contracts/helper/GenericERC20.sol/GenericERC20.json"
 import { GenericERC20 } from "../build/typechain/GenericERC20"
 import {
-  MAX_UINT256,
-  TIME,
-  ZERO_ADDRESS,
-  // asyncForEach,
-  // deployContractWithLibraries,
-  getCurrentBlockTimestamp,
-  // getUserTokenBalance,
-  // getUserTokenBalances,
-  setNextTimestamp,
-  setTimestamp,
+	MAX_UINT256,
+	TIME,
+	ZERO_ADDRESS,
+	// asyncForEach,
+	// deployContractWithLibraries,
+	getCurrentBlockTimestamp,
+	// getUserTokenBalance,
+	// getUserTokenBalances,
+	setNextTimestamp,
+	setTimestamp,
 } from "./testUtils"
 
 chai.use(solidity);
@@ -31,7 +31,7 @@ describe("Staking contract", () => {
 		addr3 : SignerWithAddress, 
 		addr4 : SignerWithAddress;
 	let token: Contract,
-	  	stakingContract: Contract;
+			stakingContract: Contract;
 
 	beforeEach(async () => {
 		// get signers
@@ -142,7 +142,7 @@ describe("Staking contract", () => {
 			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
 			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
 
-      		// const currentTimestamp = await getCurrentBlockTimestamp();
+					// const currentTimestamp = await getCurrentBlockTimestamp();
 
 			// addr3 stake 1e19 i.e. 10 PREZRV tokens for addr2
 			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
@@ -156,7 +156,7 @@ describe("Staking contract", () => {
 			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
 			token.connect(addr2).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
 
-      		// const currentTimestamp = await getCurrentBlockTimestamp();
+					// const currentTimestamp = await getCurrentBlockTimestamp();
 
 			// addr2 stake 1e19 i.e. 10 PREZRV tokens for addr2
 			await expect(stakingContract.connect(addr2).stake(addr2.address, BigNumber.from("10000000000000000000")))
@@ -209,7 +209,7 @@ describe("Staking contract", () => {
 				.to.be.revertedWith("Pausable: paused");
 		});
 
- 	});
+	});
 
 	describe("Unstake", async () => {
 		it("Succeeds with unstaking", async () => {
@@ -220,7 +220,7 @@ describe("Staking contract", () => {
 			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
 			token.connect(addr2).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
 
-      		// const currentTimestamp = await getCurrentBlockTimestamp();
+					// const currentTimestamp = await getCurrentBlockTimestamp();
 
 			// addr2 stake 1e19 i.e. 10 PREZRV tokens for addr2
 			await expect(stakingContract.connect(addr2).stake(addr2.address, BigNumber.from("10000000000000000000")))
@@ -228,7 +228,7 @@ describe("Staking contract", () => {
 				// .withArgs(addr2.address, BigNumber.from("10000000000000000000"), await getCurrentBlockTimestamp());
 
 			// read latest timestamp by last index added into the userTimestamps
-			const latestTimestamp = (await stakingContract.getLatTstamp(addr2.address)).toNumber();
+			const latestTimestamp = (await stakingContract.getLastTstamp(addr2.address)).toNumber();
 			// console.log(latestTimestamp);
 
 			// unstake at the last timestamp
@@ -250,7 +250,7 @@ describe("Staking contract", () => {
 				.to.emit(stakingContract, "TokenStaked");
 
 			// read latest timestamp by last index added into the userTimestamps
-			const latestTimestamp = (await stakingContract.getLatTstamp(addr2.address)).toNumber();
+			const latestTimestamp = (await stakingContract.getLastTstamp(addr2.address)).toNumber();
 
 			// unstake at the (latest timestamp + 1)
 			await expect(stakingContract.connect(addr2).unstakeAt(latestTimestamp+1, BigNumber.from("10000000000000000000")))
@@ -267,7 +267,7 @@ describe("Staking contract", () => {
 				.to.emit(stakingContract, "TokenStaked");
 
 			// read latest timestamp by last index added into the userTimestamps
-			const latestTimestamp = (await stakingContract.getLatTstamp(addr2.address)).toNumber();
+			const latestTimestamp = (await stakingContract.getLastTstamp(addr2.address)).toNumber();
 
 			// unstake at the last timestamp with zero amount
 			await expect(stakingContract.connect(addr2).unstakeAt(latestTimestamp, BigNumber.from(0)))
@@ -283,7 +283,7 @@ describe("Staking contract", () => {
 				.to.emit(stakingContract, "TokenStaked");
 
 			// read latest timestamp by last index added into the userTimestamps
-			const latestTimestamp = (await stakingContract.getLatTstamp(addr2.address)).toNumber();
+			const latestTimestamp = (await stakingContract.getLastTstamp(addr2.address)).toNumber();
 
 			// unstake at the last timestamp with 11 amount
 			await expect(stakingContract.connect(addr2).unstakeAt(latestTimestamp, BigNumber.from("11000000000000000000")))
@@ -299,7 +299,7 @@ describe("Staking contract", () => {
 				.to.emit(stakingContract, "TokenStaked");
 
 			// read latest timestamp by last index added into the userTimestamps
-			const latestTimestamp = (await stakingContract.getLatTstamp(addr2.address)).toNumber();
+			const latestTimestamp = (await stakingContract.getLastTstamp(addr2.address)).toNumber();
 
 			// unstake at the random timestamp with 5 amount
 			await expect(stakingContract.connect(addr2).unstakeAt(latestTimestamp-1, BigNumber.from("10000000000000000000")))
@@ -325,7 +325,7 @@ describe("Staking contract", () => {
 				.to.be.revertedWith("Pausable: paused");
 		});
 
- 	});
+	});
 
 	describe("Set token limit for NFT unlocking", async () => {
 		it("Succeeds in setting token limit", async () => {
@@ -422,6 +422,55 @@ describe("Staking contract", () => {
 			await expect(
 			stakingContract.connect(owner).setDAOTokenLimit(BigNumber.from(0)))
 				.to.be.revertedWith("Amount must be positive");
+		});
+
+		it("Reverts when paused", async () => {
+			// Pause the contract
+			await expect(stakingContract.pause())
+				.to.emit(stakingContract, 'Paused')
+				.withArgs(owner.address);
+
+			// owner set 1500 PREZRV as token limit for NFT services
+			await expect(
+			stakingContract.connect(owner).setDAOTokenLimit(BigNumber.from("1500000000000000000000")))
+				.to.be.revertedWith("Pausable: paused");
+		});
+
+	});
+
+	describe("Get total staked amount", async () => {
+		it.only("Succeeds in getting total staked amount", async () => {
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
+
+			// addr3 stake 1e19 i.e. 10 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+				// .withArgs(addr3.address, BigNumber.from("10000000000000000000"), await getCurrentBlockTimestamp());
+		
+			expect(await stakingContract.getStakedAmtTot(addr2.address))
+				.to.eq(BigNumber.from("10000000000000000000"));
+		});
+
+		it.only("Reverts when zero address", async () => {
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
+
+			// addr3 stake 1e19 i.e. 10 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+				// .withArgs(addr3.address, BigNumber.from("10000000000000000000"), await getCurrentBlockTimestamp());
+		
+			expect(await stakingContract.getStakedAmtTot(ZERO_ADDRESS))
+				.to.be.revertedWith("Invalid address");
+
+		});
+
+		it("Reverts when no staking done for account", async () => {
+			// owner set 0 PREZRV as token limit for DAO
+			await expect(
+			stakingContract.connect(owner).setDAOTokenLimit(BigNumber.from(0)))
+				.to.be.revertedWith("No staking done for this account");
 		});
 
 		it("Reverts when paused", async () => {
