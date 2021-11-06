@@ -439,7 +439,7 @@ describe("Staking contract", () => {
 	});
 
 	describe("Get total staked amount", async () => {
-		it.only("Succeeds in getting total staked amount", async () => {
+		it("Succeeds in getting total staked amount", async () => {
 			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
 			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
 
@@ -452,7 +452,7 @@ describe("Staking contract", () => {
 				.to.eq(BigNumber.from("10000000000000000000"));
 		});
 
-		it.only("Reverts when zero address", async () => {
+		it("Reverts when zero address is parsed", async () => {
 			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
 			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
 
@@ -461,31 +461,51 @@ describe("Staking contract", () => {
 				.to.emit(stakingContract, "TokenStaked");
 				// .withArgs(addr3.address, BigNumber.from("10000000000000000000"), await getCurrentBlockTimestamp());
 		
-			expect(await stakingContract.getStakedAmtTot(ZERO_ADDRESS))
+			await expect(stakingContract.getStakedAmtTot(ZERO_ADDRESS))
 				.to.be.revertedWith("Invalid address");
 
 		});
 
 		it("Reverts when no staking done for account", async () => {
-			// owner set 0 PREZRV as token limit for DAO
-			await expect(
-			stakingContract.connect(owner).setDAOTokenLimit(BigNumber.from(0)))
+			await expect(stakingContract.getStakedAmtTot(addr2.address))
 				.to.be.revertedWith("No staking done for this account");
-		});
-
-		it("Reverts when paused", async () => {
-			// Pause the contract
-			await expect(stakingContract.pause())
-				.to.emit(stakingContract, 'Paused')
-				.withArgs(owner.address);
-
-			// owner set 1500 PREZRV as token limit for NFT services
-			await expect(
-			stakingContract.connect(owner).setDAOTokenLimit(BigNumber.from("1500000000000000000000")))
-				.to.be.revertedWith("Pausable: paused");
 		});
 
 	});
 
+	describe("Get last staked timestamp", async () => {
+		it("Succeeds in getting last staked timestamp", async () => {
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
+
+			// addr3 stake 1e19 i.e. 10 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+				// .withArgs(addr3.address, BigNumber.from("10000000000000000000"), await getCurrentBlockTimestamp());
+		
+			expect(await stakingContract.getLastTstamp(addr2.address))
+				.to.not.eq(BigNumber.from(0));
+		});
+
+		it("Reverts when zero address is parsed", async () => {
+			// first approve the 1e19 i.e. 10 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("10000000000000000000"));
+
+			// addr3 stake 1e19 i.e. 10 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("10000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+				// .withArgs(addr3.address, BigNumber.from("10000000000000000000"), await getCurrentBlockTimestamp());
+		
+			await expect(stakingContract.getLastTstamp(ZERO_ADDRESS))
+				.to.be.revertedWith("Invalid address");
+
+		});
+
+		it("Reverts when no staking done for account", async () => {
+			await expect(stakingContract.getLastTstamp(addr2.address))
+				.to.be.revertedWith("No staking done for this account");
+		});
+
+	});
 
 });
