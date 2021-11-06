@@ -17,7 +17,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // ==========State variables====================================
-    IERC20 public stakingToken;
+    IERC20 public immutable stakingToken;
 
     // token limits for staked amount for different features
     uint256 public nftUnlockTokenLimit;
