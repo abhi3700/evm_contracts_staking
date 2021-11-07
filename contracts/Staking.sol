@@ -243,26 +243,34 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
 
         // sum the staked amounts if 1 month is elapsed
         for (uint256 i = 0; i < usrTstamps.length; ++i) {
-            if( (usrTstamps[i].sub(block.timestamp) >= STAKE_DURATION) &&
+            if( (block.timestamp.sub(usrTstamps[i]) >= STAKE_DURATION) &&
                 (balances[account][usrTstamps[i]] != 0) ) 
             {
                 stakedAmountTot = stakedAmountTot.add(balances[account][usrTstamps[i]]);
 
-                // Check if total staked amount is greatest out of all limits
-                // to break out of the for-loop
-                if( (stakedAmountTot >= nftUnlockTokenLimit) &&
-                    (stakedAmountTot >= nftServTokenLimit) &&
-                    (stakedAmountTot >= daoTokenLimit) )
-                {
+                // if total staked amount is more than greatest of all limits
+                // , break out of the for-loop
+                if( stakedAmountTot >= _greatestOf(nftUnlockTokenLimit, nftServTokenLimit, daoTokenLimit) )
                     break;
-                }
             }
         }
 
-        if (stakedAmountTot >= nftUnlockTokenLimit) return 1;
-        else if (stakedAmountTot >= nftServTokenLimit) return 2;
-        else if (stakedAmountTot >= daoTokenLimit) return 3;
-        else return 0;
+        if (stakedAmountTot >= daoTokenLimit) {
+            // console.log("daoTokenLimit entry");
+            return 3;
+        }
+        else if (stakedAmountTot >= nftServTokenLimit) {
+            // console.log("nftServTokenLimit entry");
+            return 2;
+        }
+        else if (stakedAmountTot >= nftUnlockTokenLimit) {
+            // console.log("nftUnlockTokenLimit entry");
+            return 1;
+        }
+        else {
+            // console.log("No unlock entry");
+            return 0;
+        }
     }
 
     // ------------------------------------------------------------------------------------------
@@ -312,5 +320,11 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         }
         
         arr.pop();     // reduce the array length for v0.6+
+    }
+
+    function _greatestOf(uint256 num1, uint256 num2, uint256 num3) private pure returns (uint256) {
+        if(num1 > num2 && num1 > num3) return num1;
+        else if (num2 > num1 && num2 > num3) return num2;
+        else return num3;
     }
 }

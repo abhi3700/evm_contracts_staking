@@ -542,18 +542,58 @@ describe("Staking contract", () => {
 				.to.eq(BigNumber.from(0));
 		});
 
-		// TODO:
 		it("Succeeds in getting user status 1", async () => {
-			// first approve the 1e19 i.e. 501 PREZRV tokens to the contract
+			// first approve the 501e18 i.e. 501 PREZRV tokens to the contract
 			token.connect(addr3).approve(stakingContract.address, BigNumber.from("501000000000000000000"));
 
-			// addr3 stake 1e19 i.e. 501 PREZRV tokens for addr2
+			// addr3 stake 501e18 i.e. 501 PREZRV tokens for addr2
 			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("501000000000000000000")))
 				.to.emit(stakingContract, "TokenStaked");
 				// .withArgs(addr3.address, BigNumber.from("501000000000000000000"), await getCurrentBlockTimestamp());
 		
+			// check after 5 weeks
+			// increase the current timestamp by 5 weeks = 35 days greater than 30 days i.e. 1 month
+			const currentTimestamp = await getCurrentBlockTimestamp();
+			await setTimestamp(currentTimestamp + 5 * TIME.WEEKS);
+
 			expect(await stakingContract.getUserStatus(addr2.address))
 				.to.eq(BigNumber.from("1"));
+		});
+
+		it("Succeeds in getting user status 2", async () => {
+			// first approve the 1001e18 i.e. 1001 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("1001000000000000000000"));
+
+			// addr3 stake 1001e18 i.e. 1001 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("1001000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+				// .withArgs(addr3.address, BigNumber.from("1001000000000000000000"), await getCurrentBlockTimestamp());
+		
+			// check after 5 weeks
+			// increase the current timestamp by 5 weeks = 35 days greater than 30 days i.e. 1 month
+			const currentTimestamp = await getCurrentBlockTimestamp();
+			await setTimestamp(currentTimestamp + 5 * TIME.WEEKS);
+
+			expect(await stakingContract.getUserStatus(addr2.address))
+				.to.eq(BigNumber.from("2"));
+		});
+
+		it("Succeeds in getting user status 3", async () => {
+			// first approve the 1501e18 i.e. 1501 PREZRV tokens to the contract
+			token.connect(addr3).approve(stakingContract.address, BigNumber.from("1501000000000000000000"));
+
+			// addr3 stake 1501e18 i.e. 1501 PREZRV tokens for addr2
+			await expect(stakingContract.connect(addr3).stake(addr2.address, BigNumber.from("1501000000000000000000")))
+				.to.emit(stakingContract, "TokenStaked");
+				// .withArgs(addr3.address, BigNumber.from("1501000000000000000000"), await getCurrentBlockTimestamp());
+		
+			// check after 5 weeks
+			// increase the current timestamp by 5 weeks = 35 days greater than 30 days i.e. 1 month
+			const currentTimestamp = await getCurrentBlockTimestamp();
+			await setTimestamp(currentTimestamp + 5 * TIME.WEEKS);
+
+			expect(await stakingContract.getUserStatus(addr2.address))
+				.to.eq(BigNumber.from("3"));
 		});
 
 
