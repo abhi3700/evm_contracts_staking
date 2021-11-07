@@ -1,4 +1,10 @@
-- documentation
-+ contract
-- unit testing
-- deployment
+- Staking contract
+	- documentation
+	+ contract
+	+ unit testing
+	- deployment
+- NFT contract
+	- documentation
+	- contract
+	- unit testing
+	- deployment
