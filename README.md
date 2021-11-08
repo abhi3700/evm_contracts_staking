@@ -23,13 +23,13 @@ $ npx hardhat test
 ```
 
 ### Deploying contracts to localhost Hardhat EVM
-#### localhost-1
+#### localhost
 ```console
 // on terminal-1
 $ npx hardhat node
 
 // on terminal-2
-$ npx hardhat run deployment/hardhat/deploy.ts --network localhost1
+$ npx hardhat run deployment/hardhat/deploy.ts --network localhost
 ```
 
 
@@ -45,7 +45,7 @@ REPORT_GAS=<true_or_false>
 
 * Deploy the contracts
 ```console
-$ npx hardhat run deployment/testnet/Rinkeby/deploy.ts  --network rinkeby
+$ npx hardhat run deployment/testnet/rinkeby/deploy.ts  --network rinkeby
 ```
 
 ### Deploying contracts to Mainnet
@@ -60,5 +60,5 @@ REPORT_GAS=<true_or_false>
 
 * Deploy the token on one-chain
 ```console
-$ npx hardhat run deployment/testnet/ETH/deploy_mainnet_eth.ts  --network mainnet
+$ npx hardhat run deployment/testnet/ETH/deploy.ts  --network mainnet
 ```

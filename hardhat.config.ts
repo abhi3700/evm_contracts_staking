@@ -62,13 +62,8 @@ task("accounts", "Prints the list of accounts", async (args, hre) => {
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
-    coverage: {
-      url: "http://127.0.0.1:8555",
-    },
-    // localhost: {
-    //   url: `http://127.0.0.1:8555`,
-    //   chainId: 1,
-    //   accounts: [`0x${DEPLOYER_PRIVATE_KEY_MAINNET}`],
+    // coverage: {
+    //   url: "http://127.0.0.1:8555",
     // },
     // mainnet: {
     //   url: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,

@@ -9,7 +9,7 @@ async function main(): Promise<void> {
   // Hardhat always runs the compile task when running scripts through it.
   // If this runs in a standalone fashion you may want to call compile manually
   // to make sure everything is compiled
-  await run("compile");
+  // await run("compile");
   
   // We get the token contract to deploy
   const TokenFactory: ContractFactory = await ethers.getContractFactory(
@@ -27,9 +27,9 @@ async function main(): Promise<void> {
 
   // We get the staking contract to deploy
   const StakingFactory: ContractFactory = await ethers.getContractFactory(
-    'VaultC',
+    'Staking',
   );
-  const stakingC: Contract = await StakingFactory.deploy(token.address, 3000);
+  const stakingC: Contract = await StakingFactory.deploy(token.address);
   await stakingC.deployed();
   console.log('Vault deployed to: ', stakingC.address);
   console.log(
