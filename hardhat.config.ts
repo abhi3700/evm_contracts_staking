@@ -102,7 +102,7 @@ const config: HardhatUserConfig = {
   // },
   gasReporter: {
     currency: "USD",
-    gasPrice: 20,
+    // gasPrice: 20,      // automatically deduce gas price based on network congestion
     // enabled: process.env.REPORT_GAS ? true : false,
   },
   typechain: {

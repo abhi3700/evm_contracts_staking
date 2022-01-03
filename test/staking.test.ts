@@ -3,8 +3,8 @@ import chai from "chai";
 import { BigNumber, Contract, Signer, Wallet } from "ethers";
 import { deployContract, solidity } from "ethereum-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import GenericERC20Artifact from "../build/artifacts/contracts/helper/GenericERC20.sol/GenericERC20.json"
-import { GenericERC20 } from "../build/typechain/GenericERC20"
+// import GenericERC20Artifact from "../build/artifacts/contracts/helper/GenericERC20.sol/GenericERC20.json"
+// import { GenericERC20 } from "../build/typechain/GenericERC20"
 import {
 	MAX_UINT256,
 	TIME,
