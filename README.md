@@ -1,5 +1,5 @@
 # staking-contract
-Staking contract for PREZRV
+Staking contract with unstaking features based on different levels
 
 ## About
 * It's a staking contract.

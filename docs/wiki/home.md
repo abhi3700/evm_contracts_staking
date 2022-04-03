@@ -1,1 +1,1 @@
-Welcome to the PREZRV Staking contract Wiki documentation 👋.
+Welcome to the Staking contract Wiki documentation 👋.

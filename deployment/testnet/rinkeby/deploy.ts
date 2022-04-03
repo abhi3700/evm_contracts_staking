@@ -31,7 +31,7 @@ async function main(): Promise<void> {
   );
   const stakingC: Contract = await StakingFactory.deploy(token.address);
   await stakingC.deployed();
-  console.log('Vault deployed to: ', stakingC.address);
+  console.log('Staking deployed to: ', stakingC.address);
   console.log(
       `The transaction that was sent to the network to deploy the vault contract: ${
           stakingC.deployTransaction.hash

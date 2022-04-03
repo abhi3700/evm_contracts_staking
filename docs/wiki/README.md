@@ -1,5 +1,5 @@
 # Documentation
-The documentation is about Staking contract for PREZRV.
+The documentation is about Staking contract.
 
 ## Contents
 * [Home](./home.md)
