@@ -33,7 +33,7 @@ async function main(): Promise<void> {
   await stakingC.deployed();
   console.log('Staking deployed to: ', stakingC.address);
   console.log(
-      `The transaction that was sent to the network to deploy the vault contract: ${
+      `The transaction that was sent to the network to deploy the staking contract: ${
           stakingC.deployTransaction.hash
       }`
   );
