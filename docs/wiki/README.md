@@ -1,5 +1,5 @@
 # Documentation
-The documentation is about Staking contract.
+The documentation is about Staking contract with unstaking features based on different levels.
 
 ## Contents
 * [Home](./home.md)

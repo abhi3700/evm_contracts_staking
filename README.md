@@ -1,4 +1,4 @@
-# staking-contract
+# Staking contract
 Staking contract with unstaking features based on different levels
 
 ## About
